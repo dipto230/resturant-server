@@ -1,12 +1,20 @@
 const express = require('express');
 
+
 const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const formData = require('form-data');
+  const Mailgun = require('mailgun.js');
+  const mailgun = new Mailgun(formData);
+  const mg = mailgun.client
+  ({username: 'api', 
+    key: process.env.MAIL_GUN_API_KEY,
 
+  });
 
 
 
@@ -234,6 +242,23 @@ async function run() {
             }};
 
             const deleteResult = await cartCollection.deleteMany(query);
+
+            mg.messages.create(process.env.MAIL_SENDING_DOMAIN, {
+                from: "Excited User <mailgun@sandbox5eaa34bf7e574cf08fd743eeec706c79.mailgun.org>",
+                to: ["diptoroy230305@gmail.com"],
+                subject: "Thanks for the order",
+                text: "Testing some Mailgun awesomeness!",
+                html: `
+                <div>
+                 <h2>Thank you for your order</h2>
+                 <h4>Your Transaction id is :${payment.transactionId}</h4> 
+
+                </div>
+            
+                `
+            })
+            .then(msg => console.log(msg)) // logs response data
+            .catch(err => console.log(err));
             res.send({paymentResult, deleteResult});
 
         })
@@ -319,5 +344,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`Bistro Boss server is running on port ${port}`);
 });
+
+
 
 
